@@ -17,7 +17,7 @@ import config
 # TODO dockerize
 # TODO readme
 
-base_domain = 'https://www.afiniti.com/'  # TODO parametrik al
+base_domain = 'https://www.afiniti.com/'
 main_domain = tldextract.extract(base_domain).domain
 
 processed_topics = []  # TODO ilk açılışta doldur bunu
