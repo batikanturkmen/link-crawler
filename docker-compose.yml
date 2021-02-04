@@ -1,21 +1,21 @@
-version: '2'
+version: "3.9"
 
 services:
   kafka-cluster:
     container_name: kafka-cluster
     image: landoop/fast-data-dev:2.5.1
     environment:
-      ADV_HOST: 127.0.0.1
+      ADV_HOST: kafka-cluster
       RUNTESTS: 0                 # Disable Running tests so the cluster starts faster
       SAMPLEDATA: 0
-#    volumes:
-#    - ./connector:/kafka-config
     ports:
       - 2181:2181                 # Zookeeper
       - 3030:3030                 # Landoop UI
       - 8081-8083:8081-8083       # REST Proxy, Schema Registry, Kafka Connect ports
       - 9581-9585:9581-9585       # JMX Ports
       - 9092:9092                 # Kafka Broker
+    networks:
+      - crawler-network
 
   neo4j:
     image: neo4j:4.0.3
@@ -27,3 +27,37 @@ services:
     environment:
       NEO4J_AUTH: neo4j/batikan
       NEO4J_dbms_logs_debug_level: DEBUG
+    networks:
+      - crawler-network
+
+  crawler-master:
+    container_name: crawler-master-node
+    build:
+      context: .
+      dockerfile: ./Dockerfile-master
+    depends_on:
+      - kafka-cluster
+      - neo4j
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - crawler-network
+
+  crawler-worker:
+    container_name: crawler-worker-node
+    build:
+      context: .
+      dockerfile: ./Dockerfile-worker
+    depends_on:
+      - kafka-cluster
+      - neo4j
+      - crawler-master
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - crawler-network
+networks:
+  crawler-network:
+    driver: bridge

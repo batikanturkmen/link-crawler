@@ -42,7 +42,6 @@ try:
             continue
         else:
             _, link_to_be_crawled = kafka_record_to_key_value(msg)
-            print('Recieved from worker: ' + link_to_be_crawled)
             req = Request(link_to_be_crawled)
             response = None
             try:

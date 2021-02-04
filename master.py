@@ -6,19 +6,14 @@ import tldextract
 import persister
 import config
 import os
+from kafka_topic_creator import create_topics
 
+create_topics()
 
-# neo4j connection
-# TODO
-# neo4jsession = persister.NeoDatabase(config.neo4j_database_address,
-#                                     config.neo4j_database_username,
-#                                     config.neo4j_database_password)
+neo4jsession = persister.NeoDatabase(config.neo4j_database_address,
+                                     config.neo4j_database_username,
+                                     config.neo4j_database_password)
 
-# TODO mailto olayi ve pdf olayı eğer bunlar varsa master göndermeyecek
-# TODO kafkanın problemi
-# TODO dockerize
-# TODO readme
-# TODO set env
 
 base_domain = 'https://www.afiniti.com/'
 
@@ -45,8 +40,8 @@ def kafka_record_to_key_value(record):
     return transformed_key, transformed_value
 
 
-# def add_to_graph(source_link, destination_link):
-#    neo4jsession.link_urls(source_link, destination_link)
+def add_to_graph(source_link, destination_link):
+    neo4jsession.link_urls(source_link, destination_link)
 
 
 conf = {'bootstrap.servers': config.bootstrap_servers,
@@ -77,21 +72,16 @@ try:
             continue
         else:
             source, destination = kafka_record_to_key_value(msg)
-
-            print("Master recieved source : " + source)
-            print("Master recieved destination : " + destination)
-
             if destination not in processed_topics \
                     and tldextract.extract(destination).domain == main_domain:  # check domain is belong to crawled link
                 write_to_kafka(topic=config.links_to_be_processed_topic,
                                key=destination,
                                value=destination)
                 print("Added to processed topics : " + destination)
-                # add_to_graph(source, destination)
+                add_to_graph(source, destination)
                 processed_topics.append(destination)
-                print("current processed nodes count: " + str(len(processed_topics)))
 finally:
     # Close down consumer to commit final offsets.
     consumer.close()
 
-#neo4jsession.close() #TODO
+neo4jsession.close()
