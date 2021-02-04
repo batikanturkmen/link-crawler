@@ -1,6 +1,5 @@
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
-from kafka.admin import KafkaAdminClient, NewTopic
 import urllib.parse
 import tldextract
 import persister
@@ -42,16 +41,6 @@ def add_to_graph(source_link, destination_link):
     neo4jsession.link_urls(source_link, destination_link)
 
 
-# admin_client = KafkaAdminClient(
-#    bootstrap_servers="localhost:9092",
-#    client_id='test'
-# )
-
-# topic_list = []
-# topic_list.append(NewTopic(name="to_be_processed3", num_partitions=3, replication_factor=1))
-# admin_client.create_topics(new_topics=topic_list, validate_only=False)
-
-
 producer = KafkaProducer(bootstrap_servers=config.bootstrap_servers)
 consumer = KafkaConsumer(config.processed_links_topic,
                          group_id=config.master_group_id)
@@ -79,9 +68,3 @@ for msg in consumer:
 
 neo4jsession.close()
 
-# if __name__ == "__main__":
-#    greeter = persister.NeoDatabase(config.neo4j_database_address,
-#                                    config.neo4j_database_username,
-#                                    config.neo4j_database_password)
-#    greeter.link_urls("www.hurriyet.com", "www.milliyet.com")
-#    greeter.close()
