@@ -5,6 +5,8 @@ import urllib.parse
 import tldextract
 import persister
 import config
+import os
+
 
 # neo4j connection
 # TODO
@@ -16,8 +18,13 @@ import config
 # TODO kafkanın problemi
 # TODO dockerize
 # TODO readme
+# TODO set env
 
 base_domain = 'https://www.afiniti.com/'
+
+if 'DOMAIN_TO_CRAWL' in os.environ:
+    base_domain = str(os.environ['DOMAIN_TO_CRAWL'])
+
 main_domain = tldextract.extract(base_domain).domain
 
 processed_topics = []  # TODO ilk açılışta doldur bunu
