@@ -1,32 +1,34 @@
-from kafka import KafkaClient
-from kafka.admin import KafkaAdminClient, NewTopic
 import config
+from confluent_kafka.admin import AdminClient, NewTopic
 
-topic_list = []
+topics_to_be_created_list = []
 
-client = KafkaClient(bootstrap_servers=config.bootstrap_servers)
-admin_client = KafkaAdminClient(
-    bootstrap_servers=config.bootstrap_servers,
-    client_id=config.topic_creator_group_id
- )
+client = AdminClient({'bootstrap.servers': config.bootstrap_servers})
+topic_metadata = client.list_topics()
 
-future = client.cluster.request_update()
-client.poll(future=future)
-
-metadata = client.cluster
-print(metadata.topics())
-
-if config.links_to_be_processed_topic not in metadata.topics():
+if topic_metadata.topics.get(config.links_to_be_processed_topic) is None:
     print("creating " + config.links_to_be_processed_topic)
-    topic_list.append(NewTopic(name=config.links_to_be_processed_topic,
-                               num_partitions=config.links_to_be_processed_topic_num_partitions,
-                               replication_factor=config.links_to_be_processed_topic_replication_factor))
+    topics_to_be_created_list.append(NewTopic(topic=config.links_to_be_processed_topic,
+                                              num_partitions=config.links_to_be_processed_topic_num_partitions,
+                                              replication_factor=config.links_to_be_processed_topic_replication_factor))
 
-if config.processed_links_topic not in metadata.topics():
+if topic_metadata.topics.get(config.processed_links_topic) is None:
     print("creating " + config.processed_links_topic)
-    topic_list.append(NewTopic(name=config.processed_links_topic,
-                               num_partitions=config.processed_links_topic_num_partitions,
-                               replication_factor=config.processed_links_topic_replication_factor))
+    topics_to_be_created_list.append(NewTopic(topic=config.processed_links_topic,
+                                              num_partitions=config.processed_links_topic_num_partitions,
+                                              replication_factor=config.processed_links_topic_replication_factor))
 
-creation_response = admin_client.create_topics(new_topics=topic_list, validate_only=False)
-print("creation response: " + str(creation_response))
+
+if len(topics_to_be_created_list) > 0:
+    # Call create_topics to asynchronously create topics. A dict
+    # of <topic,future> is returned.
+    fs = client.create_topics(topics_to_be_created_list)
+
+    # Wait for each operation to finish.
+    for topic, f in fs.items():
+        try:
+            f.result()  # The result itself is None
+            print("Topic {} created".format(topic))
+        except Exception as e:
+            print("Failed to create topic {}: {}".format(topic, e))
+
