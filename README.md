@@ -11,6 +11,10 @@ can be reached through the given link.
 
 Project can run with `docker-compose up` command.
 
+For terminating project you can use `docker-compose up` command.
+If you make change on python files, you have to rerun dockerization stages without using cache. 
+`docker-compose build --no-cache crawler-master crawler-worker` command can be used for no-cache re-build
+
 #### Project outline
 
 ![Project outline](assets/pipeline-v1.png)
@@ -24,6 +28,17 @@ Moreover, it processes responses of worker nodes, and write them to the graph da
 
 Worker nodes are dummy and size of these can be increased to achieve better performance.
 These nodes read links to be crawled kafka topic, crawl and write its findings to different kafka topic.
+
+##### Communication
+
+[Apache Kafka](https://kafka.apache.org/) is used as message broker.
+Kafka Cluster and related components can be monitored and managed by Landoop UI at `http://localhost:3030/`. This UI helps us to see topics, schemas and connectors.
+
+![Kafka UI](assets/landoop-ui.png)
+
+Kafka consumer groups helps us to distribute messages among workers with respect to [round robin](https://en.wikipedia.org/wiki/Round-robin_scheduling).
+On the other hand, we have to create multiple partition (in our case it is 3) to support multiple workers.
+According to the architecture of the Kafka, a partition can be consumed by only one consumer, while a consumer can consume more than one partition.
 
 ##### Storage
 
@@ -56,3 +71,9 @@ Query of upper image is:
 MATCH(s:URL{link: 'https://www.afiniti.com/'})
 RETURN s
 ```
+
+After running query you should click node -> expand to see connected nodes.
+
+#### Future Works
+
+- Add multi-stage build to reduce docker image sizes.
